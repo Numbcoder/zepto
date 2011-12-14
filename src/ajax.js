@@ -243,6 +243,10 @@
           if (mime == 'application/json' && !(/^\s*$/.test(xhr.responseText))) {
             try { result = JSON.parse(xhr.responseText); }
             catch (e) { error = e; }
+          //for xml
+          } else if (mime && mime.match(/application\/xml/)){
+            try { result = $.parseXML(xhr.responseText); }
+            catch (e) { error = e; }
           }
           else result = xhr.responseText;
           if (error) ajaxError(error, 'parsererror', xhr, settings);
@@ -415,5 +419,39 @@
     params.add = function(k, v){ this.push(escape(k) + '=' + escape(v)) };
     serialize(params, obj, traditional);
     return params.join('&').replace('%20', '+');
+  };
+
+  //get script with insert script tag
+  $.getScript = function(url, callback){
+    var script,
+      head = document.head || document.getElementsByTagName( "head" )[0] || document.documentElement;
+
+    script = document.createElement( "script" );
+    script.async = "async";
+    script.onload = script.onreadystatechange = function( _, isAbort ) {
+
+      if ( isAbort || !script.readyState || /loaded|complete/.test( script.readyState ) ) {
+
+        // Handle memory leak in IE
+        script.onload = script.onreadystatechange = null;
+
+        // Remove the script
+        if ( head && script.parentNode ) {
+          head.removeChild( script );
+        }
+
+        // Dereference the script
+        script = undefined;
+
+        // Callback if not abort
+        if ( !isAbort && callback ) {
+          callback( 200, "success" );
+        }
+      }
+    };
+
+    script.src = url;
+
+    head.appendChild( script, head.firstChild );
   };
 })(Zepto);

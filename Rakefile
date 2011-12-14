@@ -18,7 +18,7 @@ ZEPTO_COMPONENTS = [
   'form',
   # 'assets',
   # 'data',
-  'touch',
+  # 'touch',
   # 'gesture'
 ]
 

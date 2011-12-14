@@ -45,8 +45,19 @@
         return result;
       };
       var handler = $.extend(parse(event), {fn: fn, proxy: proxyfn, sel: selector, del: delegate, i: set.length});
+
+      // add customEvent
+      //set.push(handler);
+      //element.addEventListener(handler.e, proxyfn, false);
+      var special = $.event.special[event] || {};
+      if(!special.setup || !special.setup.call(element) === false){
+        element.addEventListener(handler.e, proxyfn, false);
+      }
+      if(special.add){
+        special.add.call(element, handler);
+      }
       set.push(handler);
-      element.addEventListener(handler.e, proxyfn, false);
+
     });
   }
   function remove(element, events, fn, selector){
@@ -54,12 +65,17 @@
     eachEvent(events || '', fn, function(event, fn){
       findHandlers(element, event, fn, selector).forEach(function(handler){
         delete handlers[id][handler.i];
-        element.removeEventListener(handler.e, handler.proxy, false);
+        // remove customEvent
+        //element.removeEventListener(handler.e, handler.proxy, false);
+        var special = $.event.special[event] || {};
+        if(!special.teardown || !special.teardown.call(element) === false){
+          element.removeEventListener(handler.e, handler.proxy, false);
+        }
       });
     });
   }
 
-  $.event = { add: add, remove: remove }
+  $.event = { add: add, remove: remove, special: {} }
 
   $.fn.bind = function(event, callback){
     return this.each(function(){
@@ -155,7 +171,10 @@
     if (typeof event == 'string') event = $.Event(event);
     fix(event);
     event.data = data;
-    return this.each(function(){ this.dispatchEvent(event) });
+
+    // trigger customEvent
+    //return this.each(function(){ this.dispatchEvent(event); });
+    return $.event.special[event.type] ? this.each(function(){ $(this).triggerHandler(event, data);}) : this.each(function(){ this.dispatchEvent(event); });
   };
 
   // triggers event handlers on current element just as if an event occurred,
