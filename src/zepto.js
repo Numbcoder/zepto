@@ -152,19 +152,6 @@ var Zepto = (function() {
     return elements;
   }
 
-  $.parseXML = function(data){
-    var xml, tmp;
-    try {
-      if ( window.DOMParser ) {
-        tmp = new DOMParser();
-        xml = tmp.parseFromString( data , "text/xml" );
-      }
-    } catch( e ) {
-      xml = undefined;
-    }
-    return xml;
-  }
-
   $.fn = {
     forEach: emptyArray.forEach,
     reduce: emptyArray.reduce,

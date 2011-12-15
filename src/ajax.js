@@ -69,29 +69,30 @@
   function getCrossdomainScript (options){
     var script,
       head = document.head || document.getElementsByTagName( "head" )[0] || document.documentElement,
+      abortTimeout,
+      clear = function(){
+        clearTimeout(abortTimeout);
+        $(script).remove();
+        script = undefined;
+      },
       xhr = {
         abort: function(){
-          if ( head && script.parentNode ) {
-            head.removeChild( script );
-          }
+          clear();
           ajaxComplete('abort', xhr, options);
         }
-      },
-      abortTimeout;
+      };
 
     script = document.createElement( "script" );
     script.async = "async";
     script.type = "text/javascript";
+
     script.onload = function() {
-      $(script).remove();
-      // Dereference the script
-      script = undefined;
+     clear();
       ajaxSuccess(null, xhr, options);
     };
 
     script.onerror = function(error){
-      $(script).remove();
-      script = undefined;
+      clear();
       ajaxError(error, "abort", xhr, options);
     };
 
@@ -310,6 +311,7 @@
 
     var async = 'async' in settings ? settings.async : true;
     xhr.open(settings.type, settings.url, async);
+    if(settings.crossDomain) xhr.withCredentials = true;
 
     if (settings.contentType) settings.headers['Content-Type'] = settings.contentType;
     for (name in settings.headers) xhr.setRequestHeader(name, settings.headers[name]);

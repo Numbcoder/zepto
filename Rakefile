@@ -10,6 +10,7 @@ ZEPTO_PKG_DIR  = File.join(ZEPTO_ROOT, 'pkg')
 ZEPTO_COMPONENTS = [
   'polyfill',
   'zepto',
+  'util',
   'event',
   'detect',
   'fx',
