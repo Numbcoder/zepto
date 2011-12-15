@@ -64,6 +64,52 @@
   // Empty function, used as default callback
   function empty() {}
 
+
+  // hack for getScript from Cross Domain
+  function getCrossdomainScript (options){
+    var script,
+      head = document.head || document.getElementsByTagName( "head" )[0] || document.documentElement,
+      xhr = {
+        abort: function(){
+          if ( head && script.parentNode ) {
+            head.removeChild( script );
+          }
+          ajaxComplete('abort', xhr, options);
+        }
+      },
+      abortTimeout;
+
+    script = document.createElement( "script" );
+    script.async = "async";
+    script.type = "text/javascript";
+    script.onload = function() {
+      $(script).remove();
+      // Dereference the script
+      script = undefined;
+      ajaxSuccess(null, xhr, options);
+    };
+
+    script.onerror = function(error){
+      $(script).remove();
+      script = undefined;
+      ajaxError(error, "abort", xhr, options);
+    };
+
+    script.src = options.url;
+    head.appendChild( script );
+
+    if ( options.timeout > 0 ) {
+      abortTimeout = setTimeout(function(){
+        xhr.abort();
+        ajaxComplete('timeout', xhr, options);
+      }, options.timeout);
+    }
+
+    return xhr;
+  };
+
+
+
   // ### $.ajaxJSONP
   //
   // Load JSON from a server in a different domain (JSONP)
@@ -211,6 +257,8 @@
       RegExp.$2 != window.location.host;
 
     if (/=\?/.test(settings.url)) return $.ajaxJSONP(settings);
+    // get script form cross domain
+    if(settings.crossDomain && settings.dataType === 'script') return getCrossdomainScript(settings);
 
     if (!settings.url) settings.url = window.location.toString();
     if (settings.data && !settings.contentType) settings.contentType = 'application/x-www-form-urlencoded';
@@ -244,10 +292,13 @@
             try { result = JSON.parse(xhr.responseText); }
             catch (e) { error = e; }
           //for xml
-          } else if (mime && mime.match(/application\/xml/)){
+          } else if (/application\/xml/.test(mime)) {
             try { result = $.parseXML(xhr.responseText); }
             catch (e) { error = e; }
+          }else if (/javascript/i.test(mime)) {
+            window[ "eval" ].call( window, xhr.responseText );
           }
+
           else result = xhr.responseText;
           if (error) ajaxError(error, 'parsererror', xhr, settings);
           else ajaxSuccess(result, xhr, settings);
@@ -348,6 +399,10 @@
     return $.ajax({ url: url, success: success, dataType: 'json' });
   };
 
+  //get script with insert script tag
+  $.getScript = function(url, success){
+    return $.ajax({ url: url, success: success, dataType: 'script' });
+  };
   // ### $.fn.load
   //
   // Load data from the server into an element
@@ -421,37 +476,4 @@
     return params.join('&').replace('%20', '+');
   };
 
-  //get script with insert script tag
-  $.getScript = function(url, callback){
-    var script,
-      head = document.head || document.getElementsByTagName( "head" )[0] || document.documentElement;
-
-    script = document.createElement( "script" );
-    script.async = "async";
-    script.onload = script.onreadystatechange = function( _, isAbort ) {
-
-      if ( isAbort || !script.readyState || /loaded|complete/.test( script.readyState ) ) {
-
-        // Handle memory leak in IE
-        script.onload = script.onreadystatechange = null;
-
-        // Remove the script
-        if ( head && script.parentNode ) {
-          head.removeChild( script );
-        }
-
-        // Dereference the script
-        script = undefined;
-
-        // Callback if not abort
-        if ( !isAbort && callback ) {
-          callback( 200, "success" );
-        }
-      }
-    };
-
-    script.src = url;
-
-    head.appendChild( script, head.firstChild );
-  };
 })(Zepto);
