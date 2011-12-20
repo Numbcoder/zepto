@@ -50,11 +50,11 @@
       //set.push(handler);
       //element.addEventListener(handler.e, proxyfn, false);
       var special = $.event.special[event] || {};
-      if(!special.setup || !special.setup.call(element) === false){
-        element.addEventListener(handler.e, proxyfn, false);
-      }
       if(special.add){
         special.add.call(element, handler);
+      }
+      if(!special.setup || special.setup.call(element) === false){
+        element.addEventListener(handler.e, handler.proxy, false);
       }
       set.push(handler);
 
@@ -68,7 +68,7 @@
         // remove customEvent
         //element.removeEventListener(handler.e, handler.proxy, false);
         var special = $.event.special[event] || {};
-        if(!special.teardown || !special.teardown.call(element) === false){
+        if(!special.teardown || special.teardown.call(element) === false){
           element.removeEventListener(handler.e, handler.proxy, false);
         }
       });
@@ -174,7 +174,11 @@
 
     // trigger customEvent
     //return this.each(function(){ this.dispatchEvent(event); });
-    return $.event.special[event.type] ? this.each(function(){ $(this).triggerHandler(event, data);}) : this.each(function(){ this.dispatchEvent(event); });
+    this.each(function(){ this.dispatchEvent(event); });
+    if($.event.special[event.type]){
+      this.each(function(){ $(this).triggerHandler(event, data);})
+    }
+    return this;
   };
 
   // triggers event handlers on current element just as if an event occurred,
