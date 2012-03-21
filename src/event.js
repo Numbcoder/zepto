@@ -3,7 +3,7 @@
 //     Zepto.js may be freely distributed under the MIT license.
 
 (function($){
-  var $$ = $.qsa, handlers = {}, _zid = 1, specialEvents={};
+  var $$ = $.qsa, handlers = {}, _zid = 1, specialEvents={}, hasTouch = 'ontouchstart' in window;
 
   specialEvents.click = specialEvents.mousedown = specialEvents.mouseup = specialEvents.mousemove = 'MouseEvents';
 
@@ -37,6 +37,8 @@
   function add(element, events, fn, selector, getDelegate){
     var id = zid(element), set = (handlers[id] || (handlers[id] = []));
     eachEvent(events, fn, function(event, fn){
+      //hack for normal brower
+      if(event === 'tap' && !hasTouch) event = 'click';
       var delegate = getDelegate && getDelegate(fn, event),
         callback = delegate || fn;
       var proxyfn = function (event) {
@@ -63,11 +65,13 @@
   function remove(element, events, fn, selector){
     var id = zid(element);
     eachEvent(events || '', fn, function(event, fn){
+      //hack for normal brower
+      if(event === 'tap' && !hasTouch) event = 'click';
       findHandlers(element, event, fn, selector).forEach(function(handler){
         delete handlers[id][handler.i];
         // remove customEvent
         //element.removeEventListener(handler.e, handler.proxy, false);
-        var special = $.event.special[event] || {};
+        var special = $.event.special[handler.e] || {};
         if(!special.teardown || special.teardown.call(element) === false){
           element.removeEventListener(handler.e, handler.proxy, false);
         }
