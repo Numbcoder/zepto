@@ -310,6 +310,9 @@
     };
 
     var async = 'async' in settings ? settings.async : true;
+    if(navigator.userAgent.toLowerCase().indexOf("android") >= 0){
+      settings.url += (settings.url.indexOf('?') > -1 ? '&' : '?') + 'android-buster=' + Math.random();
+    }
     xhr.open(settings.type, settings.url, async);
     if(settings.crossDomain) xhr.withCredentials = true;
 
